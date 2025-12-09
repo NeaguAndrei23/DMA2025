@@ -56,6 +56,17 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieHolder> {
             }
         });
 
+        holder.movieOptions.setOnCheckedChangeListener((group, checkedId) -> {
+            IMovieEventListener listener = (IMovieEventListener) context;
+            if (checkedId == R.id.rbExport) {
+                listener.onExportMovies();
+                group.clearCheck();
+            } else if (checkedId == R.id.rbPersist) {
+                listener.onImportMovies();
+                group.clearCheck();
+            }
+        });
+
         DownloadTask downloadTask = new DownloadTask(movie.getPosterUrl(),holder.moviePoster);
         Thread thread = new Thread(downloadTask);
         thread.start();

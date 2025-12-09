@@ -20,7 +20,18 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.List;
 
 import ro.ase.ie.g1106_s04.R;
 import ro.ase.ie.g1106_s04.adapters.MovieAdapter;
@@ -30,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements IMovieEventListen
 
     private static final int ADD_MOVIE = 100;
     private static final int UPDATE_MOVIE = 200;
+    private static final String MOVIES_JSON_FILE = "movies.json";
     private ActivityResultLauncher<Intent> launcher;
     private final ArrayList<Movie> movieList = new ArrayList<>();
     private MovieAdapter movieAdapter;
@@ -89,6 +101,14 @@ public class MainActivity extends AppCompatActivity implements IMovieEventListen
             intent.putExtra("action_code", ADD_MOVIE);
             launcher.launch(intent);
         }
+        else if(item.getItemId() == R.id.export_json_menu_item)
+        {
+            exportMoviesToJson();
+        }
+        else if(item.getItemId() == R.id.import_json_menu_item)
+        {
+            importMoviesFromJson();
+        }
         else if(item.getItemId() == R.id.about_menu_item)
         {
             Toast.makeText(MainActivity.this,
@@ -113,5 +133,79 @@ public class MainActivity extends AppCompatActivity implements IMovieEventListen
         movieAdapter.notifyDataSetChanged();
     }
 
+    @Override
+    public void onExportMovies() {
+        exportMoviesToJson();
+    }
+
+    @Override
+    public void onImportMovies() {
+        importMoviesFromJson();
+    }
+
+    private void exportMoviesToJson() {
+        try {
+            Gson gson = new GsonBuilder()
+                    .setDateFormat("yyyy-MM-dd")
+                    .setPrettyPrinting()
+                    .create();
+
+            String json = gson.toJson(movieList);
+
+            FileOutputStream fos = openFileOutput(MOVIES_JSON_FILE, MODE_PRIVATE);
+            OutputStreamWriter osw = new OutputStreamWriter(fos);
+            osw.write(json);
+            osw.close();
+            fos.close();
+
+            Toast.makeText(this,
+                    "Exported " + movieList.size() + " movies to " + MOVIES_JSON_FILE,
+                    Toast.LENGTH_LONG).show();
+            Log.d("MainActivity", "Movies exported successfully to " + MOVIES_JSON_FILE);
+        } catch (Exception e) {
+            Toast.makeText(this,
+                    "Export failed: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
+            Log.e("MainActivity", "Error exporting movies", e);
+        }
+    }
+
+    private void importMoviesFromJson() {
+        try {
+            FileInputStream fis = openFileInput(MOVIES_JSON_FILE);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(fis));
+            StringBuilder jsonBuilder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                jsonBuilder.append(line);
+            }
+            reader.close();
+            fis.close();
+
+            String json = jsonBuilder.toString();
+            Gson gson = new GsonBuilder()
+                    .setDateFormat("yyyy-MM-dd")
+                    .create();
+
+            Type movieListType = new TypeToken<ArrayList<Movie>>(){}.getType();
+            List<Movie> importedMovies = gson.fromJson(json, movieListType);
+
+            if (importedMovies != null) {
+                movieList.clear();
+                movieList.addAll(importedMovies);
+                movieAdapter.notifyDataSetChanged();
+
+                Toast.makeText(this,
+                        "Imported " + importedMovies.size() + " movies from " + MOVIES_JSON_FILE,
+                        Toast.LENGTH_LONG).show();
+                Log.d("MainActivity", "Movies imported successfully from " + MOVIES_JSON_FILE);
+            }
+        } catch (Exception e) {
+            Toast.makeText(this,
+                    "Import failed: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
+            Log.e("MainActivity", "Error importing movies", e);
+        }
+    }
 
 }
