@@ -36,6 +36,7 @@ import java.util.List;
 import ro.ase.ie.g1106_s04.R;
 import ro.ase.ie.g1106_s04.adapters.MovieAdapter;
 import ro.ase.ie.g1106_s04.model.Movie;
+import ro.ase.ie.g1106_s04.model.PersistenceMethodEnum;
 
 public class MainActivity extends AppCompatActivity implements IMovieEventListener{
 
@@ -145,12 +146,27 @@ public class MainActivity extends AppCompatActivity implements IMovieEventListen
 
     private void exportMoviesToJson() {
         try {
+            // Filter movies that have JSON persistence method selected
+            ArrayList<Movie> jsonMovies = new ArrayList<>();
+            for (Movie movie : movieList) {
+                if (movie.getPersistenceMethod() == PersistenceMethodEnum.JSON) {
+                    jsonMovies.add(movie);
+                }
+            }
+
+            if (jsonMovies.isEmpty()) {
+                Toast.makeText(this,
+                        "No movies selected for JSON export. Use the 'Export' radio button on movies.",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+
             Gson gson = new GsonBuilder()
                     .setDateFormat("yyyy-MM-dd")
                     .setPrettyPrinting()
                     .create();
 
-            String json = gson.toJson(movieList);
+            String json = gson.toJson(jsonMovies);
 
             FileOutputStream fos = openFileOutput(MOVIES_JSON_FILE, MODE_PRIVATE);
             OutputStreamWriter osw = new OutputStreamWriter(fos);
@@ -159,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements IMovieEventListen
             fos.close();
 
             Toast.makeText(this,
-                    "Exported " + movieList.size() + " movies to " + MOVIES_JSON_FILE,
+                    "Exported " + jsonMovies.size() + " movies to " + MOVIES_JSON_FILE,
                     Toast.LENGTH_LONG).show();
             Log.d("MainActivity", "Movies exported successfully to " + MOVIES_JSON_FILE);
         } catch (Exception e) {
@@ -191,7 +207,13 @@ public class MainActivity extends AppCompatActivity implements IMovieEventListen
             List<Movie> importedMovies = gson.fromJson(json, movieListType);
 
             if (importedMovies != null) {
-                movieList.clear();
+                // Mark all imported movies as JSON persistence
+                for (Movie movie : importedMovies) {
+                    movie.setPersistenceMethod(PersistenceMethodEnum.JSON);
+                }
+
+                // Remove existing JSON movies and add imported ones
+                movieList.removeIf(movie -> movie.getPersistenceMethod() == PersistenceMethodEnum.JSON);
                 movieList.addAll(importedMovies);
                 movieAdapter.notifyDataSetChanged();
 

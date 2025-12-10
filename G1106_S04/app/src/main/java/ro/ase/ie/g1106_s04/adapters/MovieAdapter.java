@@ -15,6 +15,7 @@ import ro.ase.ie.g1106_s04.Networking.DownloadTask;
 import ro.ase.ie.g1106_s04.R;
 import ro.ase.ie.g1106_s04.activities.IMovieEventListener;
 import ro.ase.ie.g1106_s04.model.Movie;
+import ro.ase.ie.g1106_s04.model.PersistenceMethodEnum;
 
 public class MovieAdapter extends RecyclerView.Adapter<MovieHolder> {
     private Context context;
@@ -39,6 +40,17 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieHolder> {
         holder.movieTitle.setText(movie.getTitle());
         holder.movieRating.setRating(movie.getRating());
         holder.movieRelease.setText(movie.getRelease().toString());
+
+        // Set radio button state based on movie's persistence method
+        holder.movieOptions.setOnCheckedChangeListener(null); // Clear listener before setting state
+        if (movie.getPersistenceMethod() == PersistenceMethodEnum.JSON) {
+            holder.movieOptions.check(R.id.rbExport);
+        } else if (movie.getPersistenceMethod() == PersistenceMethodEnum.SQLITE) {
+            holder.movieOptions.check(R.id.rbPersist);
+        } else {
+            holder.movieOptions.clearCheck();
+        }
+
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -56,14 +68,15 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieHolder> {
             }
         });
 
+        // Set up radio button listener to update movie's persistence preference
         holder.movieOptions.setOnCheckedChangeListener((group, checkedId) -> {
-            IMovieEventListener listener = (IMovieEventListener) context;
+            Movie currentMovie = movieArrayList.get(holder.getBindingAdapterPosition());
             if (checkedId == R.id.rbExport) {
-                listener.onExportMovies();
-                group.clearCheck();
+                currentMovie.setPersistenceMethod(PersistenceMethodEnum.JSON);
             } else if (checkedId == R.id.rbPersist) {
-                listener.onImportMovies();
-                group.clearCheck();
+                currentMovie.setPersistenceMethod(PersistenceMethodEnum.SQLITE);
+            } else {
+                currentMovie.setPersistenceMethod(PersistenceMethodEnum.NONE);
             }
         });
 

@@ -19,6 +19,7 @@ public class Movie implements Parcelable {
     private Float rating; // RatingBar
     private Boolean watched; //Switch
     private String posterUrl; //EditText
+    private PersistenceMethodEnum persistenceMethod; // RadioButtons (Export/Persist)
 
     protected Movie(Parcel in) {
         title = in.readString();
@@ -47,6 +48,9 @@ public class Movie implements Parcelable {
             release = null;
         else
             release = new Date(in.readLong());
+
+        String persistenceMethodStr = in.readString();
+        persistenceMethod = persistenceMethodStr != null ? PersistenceMethodEnum.valueOf(persistenceMethodStr) : PersistenceMethodEnum.NONE;
     }
 
     public static final Creator<Movie> CREATOR = new Creator<Movie>() {
@@ -107,6 +111,7 @@ public class Movie implements Parcelable {
         this.rating = rating;
         this.watched = watched;
         this.posterUrl = posterUrl;
+        this.persistenceMethod = PersistenceMethodEnum.NONE; // Default to none
     }
 
     public Movie() {
@@ -177,6 +182,8 @@ public class Movie implements Parcelable {
             parcel.writeByte((byte)1);
             parcel.writeLong(release.getTime());
         }
+
+        parcel.writeString(persistenceMethod != null ? persistenceMethod.toString() : null);
     }
 
     public String getTitle() {
@@ -213,5 +220,13 @@ public class Movie implements Parcelable {
 
     public String getPosterUrl() {
         return posterUrl;
+    }
+
+    public PersistenceMethodEnum getPersistenceMethod() {
+        return persistenceMethod;
+    }
+
+    public void setPersistenceMethod(PersistenceMethodEnum persistenceMethod) {
+        this.persistenceMethod = persistenceMethod;
     }
 }
