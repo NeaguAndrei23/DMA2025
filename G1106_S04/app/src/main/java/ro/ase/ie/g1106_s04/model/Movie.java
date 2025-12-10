@@ -4,24 +4,54 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import androidx.annotation.NonNull;
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.Ignore;
+import androidx.room.PrimaryKey;
 
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
 
+@Entity(tableName = "movies")
 public class Movie implements Parcelable {
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "id")
+    private long movieId;
+
+    @ColumnInfo(name = "title")
     private String title; //EditText (PlainText)
+
+    @ColumnInfo(name = "budget")
     private Double budget; //EditText (Number)
+
+    @ColumnInfo(name = "release")
     private Date release; //EditText (Date)
+
+    @ColumnInfo(name = "duration")
     private Integer duration; //SeekBar
+
+    @ColumnInfo(name = "genre")
     private GenreEnum genre; // Spinner
+
+    @ColumnInfo(name = "parental_guidance")
     private ParentalGuidanceEnum pGuidance; //RadioButtons with RadioGroup
+
+    @ColumnInfo(name = "rating")
     private Float rating; // RatingBar
+
+    @ColumnInfo(name = "watched")
     private Boolean watched; //Switch
+
+    @ColumnInfo(name = "poster_url")
     private String posterUrl; //EditText
+
+    @ColumnInfo(name = "persistence_method")
     private PersistenceMethodEnum persistenceMethod; // RadioButtons (Export/Persist)
 
+    @Ignore
     protected Movie(Parcel in) {
+        movieId = in.readLong();
         title = in.readString();
         if (in.readByte() == 0) {
             budget = null;
@@ -53,6 +83,7 @@ public class Movie implements Parcelable {
         persistenceMethod = persistenceMethodStr != null ? PersistenceMethodEnum.valueOf(persistenceMethodStr) : PersistenceMethodEnum.NONE;
     }
 
+    @Ignore
     public static final Creator<Movie> CREATOR = new Creator<Movie>() {
         @Override
         public Movie createFromParcel(Parcel in) {
@@ -101,6 +132,7 @@ public class Movie implements Parcelable {
         this.posterUrl = posterUrl;
     }
 
+    @Ignore
     public Movie(String title, Double budget, Date release, Integer duration, GenreEnum genre, ParentalGuidanceEnum pGuidance, Float rating, Boolean watched, String posterUrl) {
         this.title = title;
         this.budget = budget;
@@ -116,6 +148,14 @@ public class Movie implements Parcelable {
 
     public Movie() {
 
+    }
+
+    public long getMovieId() {
+        return movieId;
+    }
+
+    public void setMovieId(long movieId) {
+        this.movieId = movieId;
     }
 
     @Override
@@ -152,6 +192,7 @@ public class Movie implements Parcelable {
 
     @Override
     public void writeToParcel(@NonNull Parcel parcel, int i) {
+        parcel.writeLong(movieId);
         parcel.writeString(title);
         if (budget == null) {
             parcel.writeByte((byte) 0);

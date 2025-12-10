@@ -8,6 +8,10 @@
         android:title="Export to JSON" />
     <item android:id="@+id/import_json_menu_item"
         android:title="Import from JSON" />
+    <item android:id="@+id/save_database_menu_item"
+        android:title="Save to Database" />
+    <item android:id="@+id/load_database_menu_item"
+        android:title="Load from Database" />
     <item android:id="@+id/about_menu_item"
         android:title="About" />
 </menu>

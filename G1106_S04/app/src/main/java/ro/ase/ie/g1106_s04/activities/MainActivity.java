@@ -35,6 +35,8 @@ import java.util.List;
 
 import ro.ase.ie.g1106_s04.R;
 import ro.ase.ie.g1106_s04.adapters.MovieAdapter;
+import ro.ase.ie.g1106_s04.database.DatabaseManager;
+import ro.ase.ie.g1106_s04.database.MovieDao;
 import ro.ase.ie.g1106_s04.model.Movie;
 import ro.ase.ie.g1106_s04.model.PersistenceMethodEnum;
 
@@ -47,6 +49,8 @@ public class MainActivity extends AppCompatActivity implements IMovieEventListen
     private final ArrayList<Movie> movieList = new ArrayList<>();
     private MovieAdapter movieAdapter;
     private RecyclerView recyclerView;
+    private DatabaseManager databaseManager;
+    private MovieDao movieDao;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +65,10 @@ public class MainActivity extends AppCompatActivity implements IMovieEventListen
         movieAdapter=new MovieAdapter(this,movieList);
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setAdapter(movieAdapter);
+
+        // Initialize database
+        databaseManager = DatabaseManager.getInstance(this);
+        movieDao = databaseManager.getMovieDao();
 
         launcher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                 new ActivityResultCallback<ActivityResult>() {
@@ -109,6 +117,14 @@ public class MainActivity extends AppCompatActivity implements IMovieEventListen
         else if(item.getItemId() == R.id.import_json_menu_item)
         {
             importMoviesFromJson();
+        }
+        else if(item.getItemId() == R.id.save_database_menu_item)
+        {
+            saveMoviesToDatabase();
+        }
+        else if(item.getItemId() == R.id.load_database_menu_item)
+        {
+            loadMoviesFromDatabase();
         }
         else if(item.getItemId() == R.id.about_menu_item)
         {
@@ -227,6 +243,75 @@ public class MainActivity extends AppCompatActivity implements IMovieEventListen
                     "Import failed: " + e.getMessage(),
                     Toast.LENGTH_LONG).show();
             Log.e("MainActivity", "Error importing movies", e);
+        }
+    }
+
+    private void saveMoviesToDatabase() {
+        try {
+            // Filter movies that have SQLITE persistence method selected
+            ArrayList<Movie> sqliteMovies = new ArrayList<>();
+            for (Movie movie : movieList) {
+                if (movie.getPersistenceMethod() == PersistenceMethodEnum.SQLITE) {
+                    sqliteMovies.add(movie);
+                }
+            }
+
+            if (sqliteMovies.isEmpty()) {
+                Toast.makeText(this,
+                        "No movies selected for database save. Use the 'Persist' radio button on movies.",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            // Clear existing SQLite movies and insert new ones
+            movieDao.deleteAllMovies();
+            for (Movie movie : sqliteMovies) {
+                long id = movieDao.insertMovie(movie);
+                movie.setMovieId(id); // Update the ID in case it's used later
+            }
+
+            Toast.makeText(this,
+                    "Saved " + sqliteMovies.size() + " movies to database",
+                    Toast.LENGTH_LONG).show();
+            Log.d("MainActivity", "Movies saved successfully to database");
+        } catch (Exception e) {
+            Toast.makeText(this,
+                    "Database save failed: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
+            Log.e("MainActivity", "Error saving movies to database", e);
+        }
+    }
+
+    private void loadMoviesFromDatabase() {
+        try {
+            List<Movie> dbMovies = movieDao.getAllMovies();
+
+            if (dbMovies == null || dbMovies.isEmpty()) {
+                Toast.makeText(this,
+                        "No movies found in database",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            // Mark all loaded movies as SQLITE persistence
+            for (Movie movie : dbMovies) {
+                movie.setPersistenceMethod(PersistenceMethodEnum.SQLITE);
+            }
+
+            // Remove existing SQLITE movies and add loaded ones
+            movieList.removeIf(movie -> movie.getPersistenceMethod() == PersistenceMethodEnum.SQLITE);
+            movieList.addAll(dbMovies);
+            movieAdapter.notifyDataSetChanged();
+
+            Toast.makeText(this,
+                    "Loaded " + dbMovies.size() + " movies from database",
+                    Toast.LENGTH_LONG).show();
+            Log.d("MainActivity", "Movies loaded successfully from database");
+        } catch (Exception e) {
+            Toast.makeText(this,
+                    "Database load failed: " + e.getMessage(),
+                    Toast.LENGTH_LONG).show();
+            Log.e("MainActivity", "Error loading movies from database", e);
         }
     }
 
